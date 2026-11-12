@@ -64,6 +64,14 @@ export function PlanView({ pane }: { pane: PaneRect }): JSX.Element {
     startDrag(e, (dx, dy) => moveItemTo(item.id, x0 + dx / scale, y0 + dy / scale));
   };
 
+  // Only Enter and Space are handled here. Every other key (arrows, R, Delete, Escape) must
+  // reach the window-level shortcuts, which act on the selected item, so nothing is stopped.
+  const onItemKey = (item: Item, e: React.KeyboardEvent): void => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    e.preventDefault();
+    select(item.id);
+  };
+
   const onHandleDown = (axis: 'w' | 'l', e: React.PointerEvent): void => {
     const start = layout;
     const v0 = room[axis];
@@ -122,7 +130,11 @@ export function PlanView({ pane }: { pane: PaneRect }): JSX.Element {
               height: ph,
               zIndex: isSelected ? Z_SELECTED : item.kind === 'rug' ? Z_RUG : Z_ITEM,
             }}
+            tabIndex={0}
             onPointerDown={(e) => onItemDown(item, e)}
+            // Assistive technology activates a button with a synthetic click; selecting is idempotent.
+            onClick={() => select(item.id)}
+            onKeyDown={(e) => onItemKey(item, e)}
           >
             {parts.length > 1 &&
               parts.map((part, i) => {

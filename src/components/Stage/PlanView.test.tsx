@@ -1,7 +1,8 @@
-import { act, cleanup, fireEvent, render, screen } from '@testing-library/react';
+import { act, cleanup, fireEvent, render, renderHook, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createInitialDocument } from '../../domain/catalog';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { snapRoomDim } from '../../domain/geometry';
 import type { Item, PlanDocument } from '../../domain/types';
 import { usePlanStore } from '../../state/planStore';
@@ -96,6 +97,55 @@ describe('PlanView', () => {
     expect(bed).toHaveAttribute('aria-pressed', 'true');
     expect(screen.getByRole('button', { name: 'Tack writing desk' })).toHaveAttribute('aria-pressed', 'false');
     expect(bed).toHaveClass('plan-item');
+  });
+
+  it('makes every item keyboard-focusable with tabindex 0', () => {
+    render(<PlanView pane={MAIN} />);
+    for (const el of document.querySelectorAll('[data-item-id]')) expect(el).toHaveAttribute('tabindex', '0');
+  });
+
+  it('Enter on a focused item selects it', () => {
+    render(<PlanView pane={MAIN} />);
+    const desk = itemEl('seed-desk');
+    desk.focus();
+    expect(desk).toHaveFocus();
+    fireEvent.keyDown(desk, { key: 'Enter' });
+    expect(useUiStore.getState().selectedId).toBe('seed-desk');
+  });
+
+  it('Space on a focused item selects it and prevents default', () => {
+    render(<PlanView pane={MAIN} />);
+    const desk = itemEl('seed-desk');
+    desk.focus();
+    const notCancelled = fireEvent.keyDown(desk, { key: ' ' });
+    expect(notCancelled).toBe(false);
+    expect(useUiStore.getState().selectedId).toBe('seed-desk');
+  });
+
+  it('other keys on a focused item are left alone (not prevented, no selection)', () => {
+    render(<PlanView pane={MAIN} />);
+    const desk = itemEl('seed-desk');
+    desk.focus();
+    for (const key of ['ArrowRight', 'r', 'Delete', 'Escape']) {
+      expect(fireEvent.keyDown(desk, { key })).toBe(true);
+    }
+    expect(useUiStore.getState().selectedId).toBeNull();
+  });
+
+  it('after Enter selects a focused item, an arrow key reaches the global shortcuts and nudges it', () => {
+    renderHook(() => useKeyboardShortcuts());
+    render(<PlanView pane={MAIN} />);
+    const desk = itemEl('seed-desk');
+    desk.focus();
+    fireEvent.keyDown(desk, { key: 'Enter' });
+    fireEvent.keyDown(desk, { key: 'ArrowLeft' });
+    expect(item('seed-desk')).toMatchObject({ x: 117, y: 104 });
+  });
+
+  it('a click on an item selects it', () => {
+    render(<PlanView pane={MAIN} />);
+    fireEvent.click(itemEl('seed-desk'));
+    expect(useUiStore.getState().selectedId).toBe('seed-desk');
   });
 
   it('labels both room dimensions in feet', () => {
