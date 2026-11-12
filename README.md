@@ -14,6 +14,19 @@ with the Industry design system.
 | `npm run lint` | Lints the repo with ESLint (`eslint .`). |
 | `npm run check` | Runs `typecheck`, `lint`, `test` and `build` in that order and stops at the first failure. |
 
+## Keyboard
+
+These shortcuts act on the selected piece of furniture. They do nothing when nothing is
+selected, and text fields keep their own keys.
+
+| Key | What it does |
+|-----|--------------|
+| `R` | Rotates the selected piece 90°. |
+| `Delete` / `Backspace` | Removes the selected piece. |
+| `Escape` | Clears the selection. |
+| Arrow keys | Nudge the selected piece 1 in. |
+| `Shift` + arrow keys | Nudge the selected piece 12 in. |
+
 ## Docs
 
 - Spec: [`Docs/specs/2026-11-12-room-planner-workspace-design.md`](Docs/specs/2026-11-12-room-planner-workspace-design.md)
