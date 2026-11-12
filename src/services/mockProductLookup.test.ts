@@ -163,6 +163,12 @@ describe('createMockProductLookup catalogue matching', () => {
     expect(p.host).toBe('shop.example');
   });
 
+  it('never carries credentials into sourceUrl', async () => {
+    const p = await lookupNow('https://u:p@shop.example/living/alder-3-seat-sofa');
+    expect(p.sourceUrl).toBe('https://shop.example/living/alder-3-seat-sofa');
+    expect(p.sourceUrl).not.toContain('@');
+  });
+
   it('builds a sized box from the slug for an unknown product', async () => {
     const url = 'https://market.example/living/blue-thing.html';
     const p = await lookupNow(url);

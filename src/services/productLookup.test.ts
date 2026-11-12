@@ -64,6 +64,16 @@ describe('parseProductUrl', () => {
     expect(parsed.host).toBe('shop.example');
   });
 
+  it('strips credentials from the URL but keeps the query string', () => {
+    const parsed = parseProductUrl('https://u:p@shop.example/x');
+    expect(parsed.url).toBe('https://shop.example/x');
+    expect(parsed.host).toBe('shop.example');
+    expect(parsed.url).not.toContain('@');
+    expect(parseProductUrl('https://u:p@shop.example/x?token=1').url).toBe(
+      'https://shop.example/x?token=1',
+    );
+  });
+
   it.each(['localhost', 'sofa'])('rejects a host with no dot: %s', (raw) => {
     expectInvalid(raw);
   });

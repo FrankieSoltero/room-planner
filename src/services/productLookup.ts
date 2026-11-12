@@ -66,6 +66,9 @@ export function parseProductUrl(raw: string): ParsedProductUrl {
   const host = parsed.hostname.replace(/^www\./, '');
   if (!host.includes('.')) throw new LookupError('invalid_url');
 
+  // Never carry credentials into the stored source URL. The query string is kept on purpose.
+  parsed.username = '';
+  parsed.password = '';
   return { url: parsed.href, host, path: parsed.pathname };
 }
 
