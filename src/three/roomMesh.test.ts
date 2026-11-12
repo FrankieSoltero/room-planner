@@ -91,9 +91,12 @@ describe('buildRoom', () => {
 });
 
 describe('createFloorTexture', () => {
+  afterEach(() => vi.restoreAllMocks());
+
   it('returns null without throwing when no 2D canvas context is available (jsdom)', () => {
-    // Called once: jsdom prints one "Not implemented: getContext()" line through the Node
-    // console it captured at start-up, which a vi.spyOn(console) cannot intercept.
+    // jsdom's getContext() returns null; stub that result so jsdom does not print its
+    // "Not implemented" line.
+    vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockReturnValue(null);
     let texture: THREE.CanvasTexture | null | undefined;
     expect(() => {
       texture = createFloorTexture(ROOM);
@@ -102,7 +105,6 @@ describe('createFloorTexture', () => {
   });
 
   describe('with a 2D context', () => {
-    afterEach(() => vi.restoreAllMocks());
 
     it('draws a 512² plank canvas into a repeating sRGB texture', () => {
       const fillRect = vi.fn();
