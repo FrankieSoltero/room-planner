@@ -981,7 +981,7 @@ the recorded scene and camera. `ThreeView.test.tsx` replaces `SceneRenderer` wit
 
 | Case | Input / state | Expected |
 |------|---------------|----------|
-| Renderer setup | construct with fake | `outputColorSpace = SRGBColorSpace`; `shadowMap.enabled true`; `shadowMap.type = PCFSoftShadowMap` |
+| Renderer setup | construct with fake | `outputColorSpace = SRGBColorSpace`; `shadowMap.enabled true`; `shadowMap.type = PCFShadowMap` (amended 2026-11-12: three 0.187 removed `PCFSoftShadowMap` and warns at runtime; `PCFShadowMap` with `shadow.radius` gives the soft result) |
 | Lights | first `update` | scene has one `HemisphereLight` and one `DirectionalLight` with `castShadow true` at the exact values below |
 | One render per update | `update()` called once | fake `render` called exactly once |
 | Item transform | seed desk (rot 1, footprint 26×55 at 118,104) | its group at `(131, 0, 131.5)`, `rotation.y = −π/2` |
