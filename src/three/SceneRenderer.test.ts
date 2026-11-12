@@ -135,10 +135,10 @@ afterEach(() => {
 });
 
 describe('SceneRenderer', () => {
-  it('configures the renderer for sRGB output and soft shadows', () => {
+  it('configures the renderer for sRGB output and PCF shadows', () => {
     expect(fake.outputColorSpace).toBe(THREE.SRGBColorSpace);
     expect(fake.shadowMap.enabled).toBe(true);
-    expect(fake.shadowMap.type).toBe(THREE.PCFSoftShadowMap);
+    expect(fake.shadowMap.type).toBe(THREE.PCFShadowMap);
   });
 
   it('lights the scene with one hemisphere light and one shadow-casting sun', () => {

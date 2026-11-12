@@ -84,7 +84,7 @@ export class SceneRenderer {
     this.renderer = createRenderer(canvas);
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.shadowMap.enabled = true;
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    this.renderer.shadowMap.type = THREE.PCFShadowMap;
 
     this.hemi = new THREE.HemisphereLight(SKY_COLOUR, GROUND_COLOUR, CONFIG.hemiIntensity);
     this.sun = new THREE.DirectionalLight(SUN_COLOUR, CONFIG.sunIntensity);
