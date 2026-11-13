@@ -92,4 +92,15 @@ describe('parseProductUrl', () => {
   ])('rejects a non-http(s) scheme rather than prepending https: %s', (raw) => {
     expectInvalid(raw);
   });
+
+  // Most of these pass the scheme-less host:port allowance and are caught only by the no-dot host check.
+  it.each([
+    'javascript://host.tld/%0aalert(1)',
+    'javascript:/a.b',
+    'http:/\\evil.com',
+    'vbscript:a.b',
+    'file:///etc/passwd',
+  ])('rejects a scheme-like input that resembles host:port: %s', (raw) => {
+    expectInvalid(raw);
+  });
 });

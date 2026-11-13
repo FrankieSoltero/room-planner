@@ -31,7 +31,13 @@ export interface ParsedProductUrl {
 const HTTP_SCHEME = /^https?:\/\//i;
 /** Any RFC 3986 scheme prefix, e.g. `javascript:`, `data:`, `ftp:`. */
 const ANY_SCHEME = /^[a-z][a-z0-9+.-]*:/i;
-/** A scheme-less `host:port` prefix, which ANY_SCHEME would otherwise mistake for a scheme. */
+/**
+ * A scheme-less `host:port` prefix, which ANY_SCHEME would otherwise mistake for a scheme.
+ * It also lets scheme-like inputs through (`javascript://host.tld/…`, `javascript:/a.b`,
+ * `http:/\evil.com`, `file:///…`); after `https://` is prepended their host is the bare scheme
+ * name, so the no-dot host check below rejects them. That check must not be relaxed (for
+ * example to allow `localhost`) without revisiting this pattern.
+ */
 const HOST_WITH_PORT = /^[^:/?#]+:\d*(?:[/?#]|$)/;
 const ALLOWED_PROTOCOLS: ReadonlySet<string> = new Set(['http:', 'https:']);
 
