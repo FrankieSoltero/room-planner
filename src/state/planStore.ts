@@ -38,7 +38,9 @@ export const usePlanStore = create<PlanState>()((set, get) => ({
 
   setUnits: (units) => set({ units }),
 
-  setRoomDim: (axis, inches) => set((s) => ({ room: { ...s.room, [axis]: inches } })),
+  // Returning the existing state skips the write and the subscriber notification.
+  setRoomDim: (axis, inches) =>
+    set((s) => (s.room[axis] === inches ? s : { room: { ...s.room, [axis]: inches } })),
 
   addItem: (preview) => {
     const id = crypto.randomUUID();
@@ -61,8 +63,15 @@ export const usePlanStore = create<PlanState>()((set, get) => ({
     return id;
   },
 
+  // Pointer moves call this every frame; a move that lands on the same spot changes nothing.
   moveItemTo: (id, x, y) =>
-    set((s) => ({ items: updateItem(s.items, id, (item) => moveItem(item, x, y, s.room, CONFIG.furnitureSnap)) })),
+    set((s) => {
+      const item = s.items.find((i) => i.id === id);
+      if (!item) return s;
+      const moved = moveItem(item, x, y, s.room, CONFIG.furnitureSnap);
+      if (moved.x === item.x && moved.y === item.y) return s;
+      return { items: s.items.map((i) => (i.id === id ? moved : i)) };
+    }),
 
   rotateItem: (id) =>
     set((s) => ({ items: updateItem(s.items, id, (item) => rotateItem(item, s.room, CONFIG.furnitureSnap)) })),

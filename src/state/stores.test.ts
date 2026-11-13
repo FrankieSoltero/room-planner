@@ -1,5 +1,5 @@
 import { act, renderHook } from '@testing-library/react';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CONFIG } from '../config';
 import { createInitialDocument } from '../domain/catalog';
 import { centrePosition } from '../domain/geometry';
@@ -78,6 +78,18 @@ describe('planStore', () => {
     expect(after.items).toEqual(itemsBefore);
   });
 
+  it('setRoomDim to the current value keeps the same room and notifies no one', () => {
+    const before = usePlanStore.getState().room;
+    const listener = vi.fn();
+    const unsubscribe = usePlanStore.subscribe(listener);
+    usePlanStore.getState().setRoomDim('w', before.w);
+    unsubscribe();
+    expect(usePlanStore.getState().room).toBe(before);
+    expect(listener).not.toHaveBeenCalled();
+    usePlanStore.getState().setRoomDim('w', before.w + 12);
+    expect(usePlanStore.getState().room).not.toBe(before);
+  });
+
   it('addItem appends the preview centred, unrotated, with a new id and copied source and model', () => {
     const id = usePlanStore.getState().addItem(SOFA);
     const { items, room } = usePlanStore.getState();
@@ -104,6 +116,21 @@ describe('planStore', () => {
   it('moveItemTo snaps and clamps the item inside the room', () => {
     usePlanStore.getState().moveItemTo('seed-bed', 200, -3);
     expect(itemById('seed-bed')).toMatchObject({ x: 80, y: 0 });
+  });
+
+  it('moveItemTo to where the item already lands keeps the same items and notifies no one', () => {
+    const before = usePlanStore.getState().items;
+    const bed = itemById('seed-bed');
+    const listener = vi.fn();
+    const unsubscribe = usePlanStore.subscribe(listener);
+    usePlanStore.getState().moveItemTo('seed-bed', bed.x, bed.y);
+    // Snaps back to the same spot: less than half a snap step away.
+    usePlanStore.getState().moveItemTo('seed-bed', bed.x + 0.2, bed.y - 0.2);
+    unsubscribe();
+    expect(usePlanStore.getState().items).toBe(before);
+    expect(listener).not.toHaveBeenCalled();
+    usePlanStore.getState().moveItemTo('seed-bed', 200, -3);
+    expect(usePlanStore.getState().items).not.toBe(before);
   });
 
   it('moveItemTo with an unknown id leaves state unchanged and does not throw', () => {
