@@ -26,8 +26,9 @@ export const CONFIG = {
   maxPixelRatio: 2,
   nudgeStep: 1,
   nudgeStepLarge: 12,
-  // Handoff values 0.78 and 0.62 multiplied by pi: three 0.187 uses physically
-  // based light units. Starting values; Task 20 owns the final numbers.
-  hemiIntensity: 2.45,
-  sunIntensity: 1.95,
+  // Tuned in Task 20 against the prototype capture (Docs/verification). Started
+  // from the handoff's 0.78 and 0.62 multiplied by pi (2.45, 1.95) because three
+  // 0.187 uses physically based light units; final values pending owner approval.
+  hemiIntensity: 3.0,
+  sunIntensity: 1.7,
 } as const;

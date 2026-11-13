@@ -72,7 +72,7 @@ describe('CONFIG', () => {
       planMargin: 64, planMarginInset: 48, dimOffset: 30, dimOffsetInset: 22,
       insetGap: 16, minPlanScale: 0.2, minSafeWidth: 200, conflictEpsilon: 0.01,
       maxPixelRatio: 2, nudgeStep: 1, nudgeStepLarge: 12,
-      hemiIntensity: 2.45, sunIntensity: 1.95,
+      hemiIntensity: 3.0, sunIntensity: 1.7,
     });
   });
 });
