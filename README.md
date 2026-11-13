@@ -17,7 +17,8 @@ with the Industry design system.
 ## Keyboard
 
 These shortcuts act on the selected piece of furniture. They do nothing when nothing is
-selected, and text fields keep their own keys.
+selected, and text fields keep their own keys. Arrow keys keep their native behaviour in any
+form control, including the segmented controls.
 
 | Key | What it does |
 |-----|--------------|
@@ -26,6 +27,12 @@ selected, and text fields keep their own keys.
 | `Escape` | Clears the selection. |
 | Arrow keys | Nudge the selected piece 1 in. |
 | `Shift` + arrow keys | Nudge the selected piece 12 in. |
+
+## Notes
+
+- Placing furniture uses `crypto.randomUUID`, which browsers only provide in secure contexts
+  (HTTPS or `localhost`). Serving the dev build over plain HTTP on a LAN address will fail at
+  "Place in room".
 
 ## Docs
 

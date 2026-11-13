@@ -79,8 +79,10 @@ Entry format:
 - **Fix:** Tuned the two values against the prototype capture by measuring screen regions:
   hemisphere **3.0**, sun **1.7** (RMS error over walls, floor and shadow 12.3 → 3.3; shadow/lit
   0.875 vs 0.876). Recorded in `src/config.ts` and `Docs/verification/2026-11-12-live-check.md`;
-  owner approval pending. Furniture is still darker and more saturated than in the prototype
-  because of point (2). Lighting cannot fix that; it needs an owner decision on colour handling.
+  the owner approved these values on 2026-11-12 (quoted in
+  `Docs/verification/2026-11-12-live-check.md`). Furniture renders darker and more saturated than
+  in the prototype because three 0.187 converts sRGB material colours where r128 did not; the
+  owner chose to keep colour-managed materials ("Approve the app as is").
 - **How to avoid:** When porting a three.js scene across versions, compare captures side by side
   in the browser and measure them. Do not convert intensities with a formula alone. Check
   `ColorManagement` and the colour space of every texture and material colour as well.
@@ -114,3 +116,23 @@ Entry format:
 - **How to avoid:** When removing template assets, keep the page's declarations consistent. If
   there is no icon, say so. To check a console-clean row, use a fresh origin as well as a fresh
   context, because favicon misses are cached per origin.
+
+## WebGLRenderer.dispose() does not release the GL context
+- **Date:** 2026-11-12
+- **What happened:** Every Realistic ↔ Blueprint toggle, and every 2D plan ↔ 3D switch in the Tabs
+  layout, unmounted `ThreeView` and created a new WebGL context on a new canvas. The old contexts,
+  and their GPU memory including the 2048×2048 shadow map, stayed alive until garbage collection.
+  Enough toggles reach the browser's live-context cap (about 16 in Chrome), which logs "Too many
+  active WebGL contexts. Oldest context will be lost." Found in the final whole-branch review, not
+  by the tests or the live check.
+- **Root cause:** In three 0.187, `WebGLRenderer.dispose()` frees the renderer's own resources and
+  listeners but does not release the GL context (`node_modules/three/src/renderers/WebGLRenderer.js`).
+  Only `forceContextLoss()` does, through the `WEBGL_lose_context` extension. The tests use a fake
+  renderer, so nothing in the suite could see a context outlive its view.
+- **Fix:** `SceneRenderer.dispose()` now calls `renderer.forceContextLoss()` after
+  `renderer.dispose()`, runs at most once, and `update()` does nothing after it. `ThreeView` adds its
+  `webglcontextlost` listener in the renderer-creation effect and removes it before disposing, so
+  its own forced loss is not reported as "WebGL unavailable". Final-fix group 1, commit 155554c.
+- **How to avoid:** When a component owns a WebGL renderer, call `forceContextLoss()` on teardown
+  and remove any context-lost listeners first. In the live check, exercise repeated mount and
+  unmount of every WebGL view and confirm the console stays clean.
