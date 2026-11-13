@@ -3,6 +3,7 @@ import type React from 'react';
 import type { JSX } from 'react';
 import { CONFIG } from '../../config';
 import { PARTS } from '../../domain/catalog';
+import { OUTSIDE_THE_ROOM } from '../../domain/conflicts';
 import { footprint, mapPart, snapRoomDim } from '../../domain/geometry';
 import type { Item } from '../../domain/types';
 import { fmtFurnDims, fmtLen, gridStepInches } from '../../domain/units';
@@ -24,7 +25,6 @@ const HANDLE_HALF_SHORT = 6;
 const Z_SELECTED = 4;
 const Z_RUG = 1;
 const Z_ITEM = 2;
-const OUTSIDE_THE_ROOM = 'Outside the room';
 
 /**
  * The interactive 2D plan: dimension lines, the room, furniture boxes, clearance lines

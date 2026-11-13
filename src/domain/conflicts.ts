@@ -2,6 +2,9 @@ import { CONFIG } from '../config';
 import { footprint } from './geometry';
 import type { Conflicts, Item, Room } from './types';
 
+/** The conflict reason for an item that is not wholly inside the room. */
+export const OUTSIDE_THE_ROOM = 'Outside the room';
+
 /**
  * Finds the placement problem, if any, for each item; ported from prototype `conflicts()`.
  * Checks run in order (outside the room, taller than the ceiling, overlap) and the first
@@ -16,7 +19,7 @@ export function findConflicts(items: readonly Item[], room: Room): Conflicts {
   for (const a of items) {
     const [aw, ad] = footprint(a);
     if (a.x < -e || a.y < -e || a.x + aw > room.w + e || a.y + ad > room.l + e) {
-      out[a.id] = 'Outside the room';
+      out[a.id] = OUTSIDE_THE_ROOM;
       continue;
     }
     if (a.h > room.h + e) {
