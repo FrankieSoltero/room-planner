@@ -19,15 +19,19 @@ const sr = vi.hoisted(() => ({
 }));
 vi.mock('../../three/SceneRenderer', () => ({
   SceneRenderer: class {
+    private readonly canvas: HTMLCanvasElement;
     constructor(canvas: HTMLCanvasElement, tokens: unknown) {
       sr.ctor(canvas, tokens);
       if (sr.fail) throw new Error('WebGL unavailable');
+      this.canvas = canvas;
     }
     update(input: unknown): void {
       sr.update(input);
     }
+    /** Like the real renderer, disposing forces a context loss on the canvas. */
     dispose(): void {
       sr.dispose();
+      this.canvas.dispatchEvent(new Event('webglcontextlost'));
     }
   },
 }));
@@ -207,6 +211,22 @@ describe('ThreeView', () => {
     expect(frames.size).toBe(0);
     flushFrames();
     expect(sr.update).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not mark WebGL unavailable for the context loss its own unmount forces', () => {
+    const mark = spyMarkWebgl();
+    const { unmount } = render(<ThreeView pane={PANE} />);
+    flushFrames();
+    flushFrames();
+    unmount();
+    expect(sr.dispose).toHaveBeenCalledTimes(1);
+    expect(mark).not.toHaveBeenCalled();
+    expect(useUiStore.getState().webglAvailable).toBe(true);
+  });
+
+  it('gives the canvas an accessible name', () => {
+    const { getByRole } = render(<ThreeView pane={PANE} />);
+    expect(getByRole('img', { name: '3D view of the room' })).toBeInstanceOf(HTMLCanvasElement);
   });
 
   it('waits for the colour tokens before creating the renderer, then creates exactly one', () => {

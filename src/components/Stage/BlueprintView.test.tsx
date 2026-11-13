@@ -118,6 +118,11 @@ describe('BlueprintView', () => {
     expect(draws()).toBe(2);
   });
 
+  it('gives the canvas an accessible name', () => {
+    const { getByRole } = render(<BlueprintView pane={PANE} />);
+    expect(getByRole('img', { name: 'Blueprint view of the room' })).toBeInstanceOf(HTMLCanvasElement);
+  });
+
   it('cancels the pending frame on unmount', () => {
     const { unmount } = render(<BlueprintView pane={PANE} />);
     expect(frames.size).toBe(1);

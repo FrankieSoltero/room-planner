@@ -95,5 +95,8 @@ export function BlueprintView({ pane }: { pane: PaneRect }): JSX.Element {
     startDrag(e, (dx, dy) => setCamera(orbitCamera(start, dx, dy)));
   };
 
-  return <canvas ref={canvasRef} onPointerDown={onPointerDown} style={CANVAS_STYLE} />;
+  return (
+    <canvas ref={canvasRef} role="img" aria-label="Blueprint view of the room"
+      onPointerDown={onPointerDown} style={CANVAS_STYLE} />
+  );
 }

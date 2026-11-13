@@ -27,6 +27,7 @@ interface FakeRenderer extends RendererLike {
   setPixelRatio: ReturnType<typeof vi.fn<RendererLike['setPixelRatio']>>;
   setSize: ReturnType<typeof vi.fn<RendererLike['setSize']>>;
   dispose: ReturnType<typeof vi.fn<RendererLike['dispose']>>;
+  forceContextLoss: ReturnType<typeof vi.fn<RendererLike['forceContextLoss']>>;
 }
 
 /** A renderer stand-in: records render calls instead of drawing, so no WebGL is needed. */
@@ -39,6 +40,7 @@ function fakeRenderer(): FakeRenderer {
     setPixelRatio: vi.fn<RendererLike['setPixelRatio']>(),
     setSize: vi.fn<RendererLike['setSize']>(),
     dispose: vi.fn<RendererLike['dispose']>(),
+    forceContextLoss: vi.fn<RendererLike['forceContextLoss']>(),
     render: vi.fn((scene: THREE.Object3D, camera: THREE.Camera) => {
       renders.push({ scene: scene as THREE.Scene, camera });
     }),
@@ -338,5 +340,30 @@ describe('SceneRenderer', () => {
     expect(fake.dispose).toHaveBeenCalledTimes(1);
     expect(scene.children).toHaveLength(0);
     expect(watch.disposed()).toBe(watch.total);
+  });
+
+  it('forces the context loss exactly once, after disposing the renderer', () => {
+    sr.update(input());
+    sr.dispose();
+    expect(fake.forceContextLoss).toHaveBeenCalledTimes(1);
+    const [disposeOrder] = fake.dispose.mock.invocationCallOrder;
+    const [lossOrder] = fake.forceContextLoss.mock.invocationCallOrder;
+    expect(lossOrder).toBeGreaterThan(disposeOrder ?? Infinity);
+  });
+
+  it('does nothing on a second dispose', () => {
+    sr.update(input());
+    sr.dispose();
+    sr.dispose();
+    expect(fake.dispose).toHaveBeenCalledTimes(1);
+    expect(fake.forceContextLoss).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not render after dispose', () => {
+    sr.update(input());
+    expect(fake.renders).toHaveLength(1);
+    sr.dispose();
+    sr.update(input());
+    expect(fake.renders).toHaveLength(1);
   });
 });

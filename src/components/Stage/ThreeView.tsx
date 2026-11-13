@@ -29,9 +29,12 @@ export default function ThreeView({ pane }: { pane: PaneRect }): JSX.Element {
   const conflicts = useConflicts();
 
   // Create the renderer once the stylesheet's colour tokens are readable, retrying each frame.
+  // A lost context (GPU reset, too many contexts) means the realistic view cannot continue.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
+    const onLost = () => useUiStore.getState().markWebglUnavailable();
+    canvas.addEventListener('webglcontextlost', onLost);
     let created: SceneRenderer | null = null;
     let frame = 0;
     const tryCreate = () => {
@@ -52,6 +55,8 @@ export default function ThreeView({ pane }: { pane: PaneRect }): JSX.Element {
     frame = requestAnimationFrame(tryCreate);
     return () => {
       cancelAnimationFrame(frame);
+      // Disposing forces a context loss; the listener goes first so that loss is not reported.
+      canvas.removeEventListener('webglcontextlost', onLost);
       created?.dispose();
     };
   }, []);
@@ -71,15 +76,6 @@ export default function ThreeView({ pane }: { pane: PaneRect }): JSX.Element {
     return () => cancelAnimationFrame(frame);
   }, [renderer, room, items, selectedId, conflicts, camera, pane]);
 
-  // A lost context (GPU reset, too many contexts) means the realistic view cannot continue.
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-    const onLost = () => useUiStore.getState().markWebglUnavailable();
-    canvas.addEventListener('webglcontextlost', onLost);
-    return () => canvas.removeEventListener('webglcontextlost', onLost);
-  }, []);
-
   // React's onWheel listener is passive and cannot stop the page scrolling.
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -98,5 +94,8 @@ export default function ThreeView({ pane }: { pane: PaneRect }): JSX.Element {
     startDrag(e, (dx, dy) => setCamera(orbitCamera(start, dx, dy)));
   };
 
-  return <canvas ref={canvasRef} onPointerDown={onPointerDown} style={CANVAS_STYLE} />;
+  return (
+    <canvas ref={canvasRef} role="img" aria-label="3D view of the room"
+      onPointerDown={onPointerDown} style={CANVAS_STYLE} />
+  );
 }

@@ -18,7 +18,7 @@ export interface SceneInput { room: Room; items: readonly Item[]; selectedId: st
 
 /** The slice of `THREE.WebGLRenderer` the scene renderer uses; tests inject a fake. */
 export type RendererLike = Pick<THREE.WebGLRenderer,
-  'setPixelRatio' | 'setSize' | 'render' | 'dispose' | 'shadowMap' | 'outputColorSpace'>;
+  'setPixelRatio' | 'setSize' | 'render' | 'dispose' | 'forceContextLoss' | 'shadowMap' | 'outputColorSpace'>;
 
 const SKY_COLOUR = 0xffffff;
 const GROUND_COLOUR = 0xd8d2c8;
@@ -77,6 +77,7 @@ export class SceneRenderer {
   private room: THREE.Group | null = null;
   private roomKey = '';
   private size = { width: 0, height: 0, pixelRatio: 0 };
+  private disposed = false;
 
   constructor(canvas: HTMLCanvasElement, tokens: Tokens,
     createRenderer: (canvas: HTMLCanvasElement) => RendererLike = createWebGLRenderer) {
@@ -98,6 +99,7 @@ export class SceneRenderer {
 
   /** Brings the scene in line with `input`, then renders exactly once. */
   update(input: SceneInput): void {
+    if (this.disposed) return;
     this.syncSize(input);
     this.syncRoom(input.room);
     this.syncFurniture(input);
@@ -105,8 +107,15 @@ export class SceneRenderer {
     this.renderer.render(this.scene, this.camera);
   }
 
-  /** Releases the renderer and everything in the scene. */
+  /**
+   * Releases the renderer, its WebGL context and everything in the scene. `WebGLRenderer.dispose()`
+   * alone keeps the context alive until garbage collection, so the context is lost explicitly;
+   * otherwise each remount leaks one and the browser's live-context cap is soon reached.
+   * Later calls do nothing.
+   */
   dispose(): void {
+    if (this.disposed) return;
+    this.disposed = true;
     if (this.room) disposeTree(this.room);
     this.room = null;
     this.roomKey = '';
@@ -116,6 +125,7 @@ export class SceneRenderer {
     this.sun.dispose();
     this.scene.clear();
     this.renderer.dispose();
+    this.renderer.forceContextLoss();
   }
 
   private syncSize({ width, height, pixelRatio }: SceneInput): void {
