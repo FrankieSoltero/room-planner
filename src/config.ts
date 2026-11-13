@@ -28,7 +28,7 @@ export const CONFIG = {
   nudgeStepLarge: 12,
   // Tuned in Task 20 against the prototype capture (Docs/verification). Started
   // from the handoff's 0.78 and 0.62 multiplied by pi (2.45, 1.95) because three
-  // 0.187 uses physically based light units; final values pending owner approval.
+  // 0.187 uses physically based light units; final values owner-approved on 2026-11-12.
   hemiIntensity: 3.0,
   sunIntensity: 1.7,
 } as const;

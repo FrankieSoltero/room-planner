@@ -87,11 +87,30 @@ Entry format:
 
 ## Room handles snap to 3 in
 - **Date:** 2026-11-12
-- **What happened:** A Task 14 test first expected a dragged room length of 148 in. The code
-  returned 147 and the test failed.
-- **Root cause:** Room edge handles snap with `snapRoomDim` to `CONFIG.roomHandleSnap` (3 in), so
-  the right value was 147. The test was wrong, not the code.
-- **Fix:** The test now gets its expected value from `snapRoomDim(148)`, which is 147
-  (`src/components/Stage/PlanView.test.tsx`).
+- **What happened:** A Task 14 `PlanView` test dragged the bottom room handle and first expected
+  a room length of 148 in, worked out by hand from the pointer distance. The app gave 147, so the
+  test failed.
+- **Root cause:** Room edge handles snap with `snapRoomDim` to `CONFIG.roomHandleSnap` (3 in), and
+  148 snaps to 147. The test was wrong, not the code.
+- **Fix:** `src/components/Stage/PlanView.test.tsx` now asserts that
+  `snapRoomDim(168 - 56.19 / SCALE)` equals 147 and that the store's `room.l` equals 147.
 - **How to avoid:** Work out expected values with the same snap function the code uses
   (`snapRoomDim`, `CONFIG.furnitureSnap`), not by hand.
+
+## First load logged a favicon 404
+- **Date:** 2026-11-12
+- **What happened:** In the Task 20 live check, row L1 ("console has 0 errors") failed. The first
+  load of the app in a browser profile logged `Failed to load resource: 404 (Not Found) @
+  http://localhost:5173/favicon.ico`. Later loads were clean only because Chrome caches the miss
+  per origin, which hid the problem.
+- **Root cause:** The scaffold dropped the Vite template's `public/` favicon and removed its
+  `<link rel="icon">` from `index.html` without declaring that there is no icon. With no icon
+  declared, browsers request `/favicon.ico`.
+- **Fix:** `index.html` declares an empty icon, `<link rel="icon" href="data:," />` (no file, no
+  network request). `src/indexHtml.test.ts` asserts the icon link is present and that the shell
+  references no external `http(s)://` resource. Commit 89c7f93. Re-checked on a dev server at a
+  port never used before, in a fresh browser context: the old file logged the 404, the new file
+  logged 0 errors and 0 warnings.
+- **How to avoid:** When removing template assets, keep the page's declarations consistent. If
+  there is no icon, say so. To check a console-clean row, use a fresh origin as well as a fresh
+  context, because favicon misses are cached per origin.

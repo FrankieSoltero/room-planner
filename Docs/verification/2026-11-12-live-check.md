@@ -4,7 +4,7 @@ Task 20 of `Docs/plans/2026-11-12-room-planner-workspace.md`. The app (`npm run 
 http://localhost:5173/) and the prototype (`npx serve design_handoff_room_planner -l 4173`,
 `Room Planner.dc.html`) were driven in the same Chromium through the Playwright browser tools at a
 1440×900 viewport, device pixel ratio 1. Tree under test: `feat/workspace-slice` at 89700c9 plus the
-lighting change in this commit. App state was read from the live stores with
+lighting change (28be032). The L1 re-run used 89c7f93. App state was read from the live stores with
 `await import('/src/state/uiStore.ts')` / `planStore.ts` in `browser_evaluate` (Vite serves one module
 instance per URL, so this is the same store the UI uses).
 
@@ -12,11 +12,11 @@ instance per URL, so this is the same store the UI uses).
 
 | Row | Action | Expected in the app | Result | Observation |
 |-----|--------|---------------------|--------|-------------|
-| L1 | Load the page | 3D view fills the stage with a bed and a desk in a room with a plank floor; plan inset bottom-right labelled `Plan`; tag `Everything fits`; console has 0 errors and 0 warnings | **Fail** | Everything visual passes: canvas 1100×729 at (340, 115.08) fills the stage; bed, desk and plank floor rendered; inset pane at (1044, 508.08, 380×320) labelled `Plan` (shown uppercase by CSS); tag `Everything fits`; store state: layout inset, realistic, nothing selected, camera yaw −0.65 / pitch 0.55 / zoom 1. Console: the app itself logs 0 errors and 0 warnings (only Vite debug lines and React's DevTools info line, on 10+ loads). **But the very first load in this browser profile logged 1 error: `Failed to load resource: 404 (Not Found) @ http://localhost:5173/favicon.ico`.** Later loads and a fresh isolated context did not repeat it (Chrome caches the miss). Root cause: `index.html` has no `<link rel="icon">` and there is no `public/` folder, so the browser's automatic `/favicon.ico` request 404s. Not fixed: the fix lives in `index.html`, which is outside the files this task may touch, and choosing an icon (or declaring none with `<link rel="icon" href="data:,">`) is a design call. The prototype shows the same 404 on its first load. |
+| L1 | Load the page | 3D view fills the stage with a bed and a desk in a room with a plank floor; plan inset bottom-right labelled `Plan`; tag `Everything fits`; console has 0 errors and 0 warnings | Pass (after fix 89c7f93) | Visual checks, first run: canvas 1100×729 at (340, 115.08) fills the stage; bed, desk and plank floor rendered; inset pane at (1044, 508.08, 380×320) labelled `Plan` (shown uppercase by CSS); tag `Everything fits`; store state: layout inset, realistic, nothing selected, camera yaw −0.65 / pitch 0.55 / zoom 1. First run failed on the console: the first load in the profile logged `Failed to load resource: 404 (Not Found) @ http://localhost:5173/favicon.ico`. Root cause: `index.html` declared no icon, so the browser requested `/favicon.ico`. Re-run after the fix. Chrome caches a favicon miss per origin, so each state was loaded on a dev server at a port never used before, in a fresh isolated browser context. (1) Before the fix, the old `index.html` (no icon link) on `npx vite --port 5181`, context `l1-prefix`: console showed `Errors: 1, Warnings: 0`, and the error was `Failed to load resource: … 404 (Not Found) @ http://localhost:5181/favicon.ico`. This shows the context does request the favicon. (2) After the fix, `index.html` with `<link rel="icon" href="data:," />` on `--port 5182`, context `l1-postfix`: console showed `Errors: 0, Warnings: 0` (only the two Vite debug lines and React's DevTools info line); the DOM has `<link rel="icon" href="data:,">`; there are no `favicon` resource entries; tag `Everything fits`. Reloaded in the same context at 1440×900 (DPR 1, canvas 1100×729): no console error or warning and no HTTP response ≥ 400. The Playwright network-request tool does not list browser-initiated favicon fetches, so the evidence for the 404 is the console line, not the network log. |
 | L2 | Click `Swap` | plan becomes the main view, inset is labelled `3D`; click again restores L1 | Pass | After Swap: plan pane 1100×729 at z 1, inset (1044, 508.08, 380×320) at z 8 labelled `3D` and showing the WebGL room; `insetSwapped` true. Second click: inset labelled `Plan` again, 3D main, `insetSwapped` false. |
 | L3 | Choose `Side by side` | plan on the left half, 3D on the right half, one divider line | Pass | Plan pane (340, 115.08, 550×729); 3D pane (890, 115.08, 550×729) with class `pane-divider`; one vertical rule at x = 890 in the screenshot, no other. |
 | L4 | Choose `Tabs`, then `3D check`, then `2D plan` | one pane at a time; the hint text switches between the 3D and 2D copy | Pass | A `View` radio group appears (`2D plan / 3D check`). Exactly one `.pane` (1100×729) each time. `3D check`: 1 canvas, hint "Drag to orbit, scroll to zoom. Pick a piece from the list to highlight it." `2D plan`: 0 canvases, hint "Drag a piece on the plan to move it, or nudge it with the arrow keys. Select one to see its clearance to each wall. R rotates, Delete removes. Drag the 3D view to orbit." |
-| L5 | Back to inset; drag in the 3D view; scroll over it | the room orbits with the pointer; scrolling zooms and the page does not scroll | Pass | Pointer drag of (+100, +40) px: yaw −0.65 → −1.45, pitch 0.55 → 0.79 (0.008 and 0.006 rad/px); the mid-drag sample (−1.05, 0.67) shows it follows live. Wheel −200 → zoom 1.49; wheel +400 → 0.67. A passive window listener saw `defaultPrevented === true` on the wheel event; `scrollX/scrollY` stayed 0 and no element had a scroll offset. |
+| L5 | Back to inset; drag in the 3D view; scroll over it | the room orbits with the pointer; scrolling zooms and the page does not scroll | Pass | Pointer drag of (+100, +40) px: yaw −0.65 → −1.45, pitch 0.55 → 0.79 (0.008 and 0.006 rad/px); the mid-drag sample (−1.05, 0.67) shows it follows live. Wheel −200 → zoom 1.49; wheel +400 → 0.67. These steps are twice the nominal delta: exp(0.2) would give 1.22, but the browser tool delivered double the stated wheel delta. `ThreeView.test.tsx` pins one wheel event to exactly one `zoomCamera` step. A passive window listener saw `defaultPrevented === true` on the wheel event; `scrollX/scrollY` stayed 0 and no element had a scroll offset. |
 | L6 | Choose `Blueprint` | line drawing of the same room from the same angle, with `12′ 0″`, `14′ 0″`, `8′ 0″` labels; `Realistic` restores the WebGL view | Pass | Blueprint canvas 1100×729 shows the hairline room, bed and desk from the same camera (room corners at the same screen points as the realistic view: back corner ≈ (697, 260), front corner ≈ (665, 728)), labels `14′ 0″`, `12′ 0″`, `8′ 0″`. `Realistic` brings the WebGL render back; store `renderStyle` = realistic. |
 | L7 | Swap so the plan is main; drag the bed | it follows the pointer in 1 in steps and stops at the walls; dashed clearance lines with distance chips appear | Pass | Plan scale 515.14 px / 144 in = 3.577 px/in. Pointer (+50, +25) px moved the bed from (40, 0) to (54, 7) in = 13.98 / 6.99 in rounded; intermediate samples 41/1, 43/2, 45/3, 50/5 are whole inches. Dragging far up-left stops at (0, 0); far down-right stops at (80, 83) = (144 − 64, 168 − 85). During the drag 4 `plan-clearance` elements with dashed borders and chips `4′ 6″`, `2′ 2″`, `6′ 4″` (54, 26, 76 in) appear. |
 | L8 | Drag the bed onto the desk | both list rows show an `Overlaps …` tag; top tag reads `2 conflicts`; both boxes are hatched on the plan | Pass | Bed dropped at (80, 72). Rows: "Low platform bed, queen … Overlaps Tack writing desk" and "Tack writing desk … Overlaps Low platform bed, queen". Top tag `2 conflicts`. Both plan boxes have class `is-conflict` with a `repeating-linear-gradient(45deg, …)` background. |
@@ -28,11 +28,13 @@ instance per URL, so this is the same store the UI uses).
 | L14 | Resize the window to 1100×700 and back | both views refit without overflow or blank canvas | Pass | 1100×700: document 1100×700 (no scroll), no element past the viewport; 3D pane 760×529 with canvas 760×529; inset 274×233; room drawn. Swapped at that size: inset canvas 273×232 rendered. Back at 1440×900: canvas 1100×729, inset 380×320, plan room (1138, 556, 192×224) — the same as before. |
 | L15 | Compare each region with the prototype at 1440×900 | header, sidebar, top bar, stage and selection bar match the prototype in position and size to within 2 px, measured with the browser inspector on: sidebar width, header height, inset rectangle, room rectangle on the plan | Pass | Same script in both pages, structural selectors (the prototype has no class names): `header`; `aside`; top bar = `main.children[0]`; stage = `main.children[1]`; selection/hint bar = `main.children[2]`; inset = the stage child whose computed `z-index` is 8; plan room = first descendant of the plan pane with a 2 px solid top border wider than 50 px. Prototype → app (x, y, w, h): header 0,0,1440,57.54 → identical; sidebar 0,57.54,340,842.46 → identical; top bar 340,57.54,1100,57.54 → identical; stage 340,115.08,1100,728.92 → identical; bottom bar 340,844,1100,56 → identical (also with the bed selected); inset 1044,508.08,380,320 → identical; plan room in the inset 1139,557.08,192,224 → 1138,556.08,192,224 (1 px left and up, within 2 px); plan room as main view 426.42,179.08,515.14,601 → identical. |
 
-Result: 14 of 15 rows pass. L1 fails only on the favicon 404 described above.
+Result: all 15 rows pass. L1 failed on the first run (favicon 404); it passed on the re-run after fix 89c7f93.
 
 ## Fixes made under this task
 
-None. No row failed because of app code.
+| Row | Root cause | Files | Test | Commit |
+|---|---|---|---|---|
+| L1 | `index.html` declared no icon, so the browser's automatic `/favicon.ico` request 404'd and logged a console error on first load | `index.html` (adds `<link rel="icon" href="data:," />`) | `src/indexHtml.test.ts`: asserts a `<link rel="icon"` is present (seen failing before the fix) and that the page shell references no external `http(s)://` resource | 89c7f93 |
 
 ## Lighting
 
@@ -68,12 +70,16 @@ to the shader as if they were already linear and then sRGB-encodes the output, w
 three 0.187 converts the same hex colours from sRGB to linear first, so they render at their true
 values. The floor uses an sRGB-tagged texture in both versions, so it already matched. Making furniture
 match would need a colour-handling change, not a light change (for example, setting material
-colours with `LinearSRGBColorSpace` to copy r128). That is an owner decision; it is not made here.
+colours with `LinearSRGBColorSpace` to copy r128). The owner decided against it (see below).
 
 Starting values: hemisphere 2.45, sun 1.95 (the handoff's 0.78 and 0.62 × π).
 Final values in `src/config.ts`: **hemisphere 3.0, sun 1.7**.
 
-Owner lighting approval: PENDING
+Owner lighting approval: **APPROVED on 2026-11-12.** The project owner saw both captures and the
+values (hemisphere 3.0, sun 1.7). The furniture-colour difference was explained: the app shows the
+handoff's listed material hex values accurately, while the prototype's three r128 washed them out.
+Asked which look they wanted, the owner chose, verbatim: "Approve the app as is (Recommended)".
+Furniture-colour decision: keep colour-managed materials. Do not copy r128's wash-out.
 
 ## Other observations (not row failures)
 
