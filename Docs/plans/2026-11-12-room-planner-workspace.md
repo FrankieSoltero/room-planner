@@ -21,7 +21,7 @@ Tests: `npx vitest run <file>`. Full gate: `npm run check`
 
 ## Global Constraints
 
-- Repo root is `/Users/franciscosoltero/Desktop/Code/Room Planner Website`. All paths
+- Repo root is the project folder (the one holding `package.json`). All paths
   below are relative to it. Run every command from the root.
 - `design_handoff_room_planner/` is read-only reference. Never import from it, never
   edit it. "Prototype" means `design_handoff_room_planner/Room Planner.dc.html`;
