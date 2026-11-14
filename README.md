@@ -1,3 +1,8 @@
+> **This repository is archived.** The Room Planner now lives in the portfolio site at
+> [frankiesoltero.com/room-planner](https://frankiesoltero.com/room-planner), in the
+> [`room-planner/` folder of FrankieSoltero/portfolio](https://github.com/FrankieSoltero/portfolio/tree/main/room-planner).
+> This repo is kept for its commit history only and is no longer updated.
+
 # Room planner
 
 A browser room-planning workspace built with Vite, React and TypeScript. It is styled
